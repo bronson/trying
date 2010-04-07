@@ -1,6 +1,6 @@
 module Retryable
   def retryable( options = {}, &block )
-    opts = { :tries => 1, :on => Exception }.merge(options)
+    opts = { :tries => 1, :on => StandardError }.merge(options)
 
     return nil if opts[:tries] == 0
   
