@@ -3,86 +3,87 @@ require File.dirname(__FILE__) + '/../spec_helper'
 describe "Retryable#retryable" do
   include Retryable
 
-  it "should not affect the return value of the block given" do
-    retryable { 'foo' }.should == 'foo'
+  def do_retry(opts = {})
+    @num_calls = 0
+    return retryable(@retryable_opts) do
+      @num_calls += 1
+      if exception = opts[:raising]
+        raise exception if opts[:when].nil? || opts[:when].call
+      end
+      opts[:returning]
+    end
   end
 
-  it "should not affect the return value of the block given when there is a retry" do
-    num_calls = 0
-    ret_val = retryable do
-      num_calls += 1
-      raise StandardError if num_calls == 1 # Raise error only the 1st time.
-      'foo'
+  describe "with default options" do
+    before(:each) do
+      @retryable_opts = {}
+    end
+    
+    it "should not affect the return value of the block given" do
+      retryable { 'foo' }.should == 'foo'
     end
 
-    num_calls.should == 2
-    ret_val.should == 'foo'
+    it "should not affect the return value of the block given when there is a retry" do
+      do_retry(:returning => 'foo', :raising => StandardError, :when => lambda { @num_calls == 1 } ).should == 'foo'
+      @num_calls.should == 2
+    end
+
+    it "uses default options of :tries => 1 and :on => StandardError when none is given" do
+      lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
+      @num_calls.should == 2
+    end
+  
+    it "should not catch Exceptions by default" do
+      lambda {do_retry(:raising => Exception)}.should raise_error(Exception)
+      @num_calls.should == 1
+    end
+
+    it "does not retry if none of the retry conditions occur" do
+      do_retry
+      @num_calls.should == 1
+    end
   end
 
-  it "uses default options of :tries => 1 and :on => StandardError when none is given" do
-    num_calls = 0
-    lambda {
-      retryable do
-        num_calls += 1
-        raise StandardError
-      end
-    }.should raise_error(StandardError)
-
-    num_calls.should == 2
+  describe "with the :tries option set" do
+    before(:each) do
+      @retryable_opts = {:tries => 3}
+    end
+    
+    it "uses retries :tries times when the exception to retry on occurs every time" do
+      lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
+      @num_calls.should == 4
+    end
   end
   
-  it "should not catch Exceptions by default" do
-    num_calls = 0
-    lambda {
-      retryable do
-        num_calls += 1
-        raise Exception
-      end
-    }.should raise_error(Exception)
+  describe "with the :on option set" do
+    before(:each) do
+      @retryable_opts = {:on => StandardError}
+    end
 
-    num_calls.should == 1
+    it "should catch any subclass exceptions" do
+      do_retry(:raising => IOError, :when => lambda {@num_calls == 1})
+      @num_calls.should == 2
+    end
+    
+    it "should not catch any superclass exceptions" do
+      lambda {do_retry(:raising => Exception, :when => lambda {@num_calls == 1})}.should raise_error(Exception)
+      @num_calls.should == 1
+    end
   end
+  
+  describe "with the :matching option set" do
+    before(:each) do
+      @retryable_opts = {:matching => /IO timeout/}
+    end
 
-  it "does not retry if none of the retry conditions occur" do
-    num_calls = 0
-    retryable { num_calls += 1 }
-
-    num_calls.should == 1
-  end
-
-  it "uses retries :tries times when the exception to retry on occurs every time" do
-    num_calls = 0
-    lambda {
-      retryable(:tries => 3) do
-        num_calls += 1
-        raise StandardError
-      end
-    }.should raise_error(StandardError)
-
-    num_calls.should == 4
-  end
-
-  it "should catch any subclass exceptions" do
-    num_calls = 0
-    lambda {
-      retryable(:on => StandardError) do
-        num_calls += 1
-        raise IOError if num_calls == 1 # Raise error only the 1st time.
-      end
-    }.should_not raise_error(IOError)
-
-    num_calls.should == 2
-  end
-
-  it "should not catch any superclass exceptions" do
-    num_calls = 0
-    lambda {
-      retryable(:on => StandardError) do
-        num_calls += 1
-        raise Exception if num_calls == 1 # Raise error only the 1st time.
-      end
-    }.should raise_error(Exception)
-
-    num_calls.should == 1
+    it "should catch an exception that matches the regexp" do
+      lambda {do_retry(:raising => "there was like an IO timeout and stuffs", :when => lambda {@num_calls == 1})}.should_not raise_error(RuntimeError)
+      @num_calls.should == 2
+    end
+    
+    it "should not catch an exception that doesn't match the regexp" do
+      lambda {do_retry(:raising => "ERRROR of sorts", :when => lambda {@num_calls == 1})}.should raise_error(RuntimeError)
+      @num_calls.should == 1
+    end
   end
 end
