@@ -86,4 +86,18 @@ describe "Retryable#retryable" do
       @num_calls.should == 1
     end
   end
+  
+  describe "with all the options set" do
+    before(:each) do
+      @retryable_opts = { :tries    => 3,
+                          :on       => RuntimeError,
+                          :sleep    => 0.3,
+                          :matching => /IO timeout/ }
+    end
+    
+    it "should still work as expected" do
+      lambda {do_retry(:raising => "my IO timeout", :when => lambda {@num_calls < 4})}.should_not raise_error
+      @num_calls.should == 4
+    end
+  end
 end
