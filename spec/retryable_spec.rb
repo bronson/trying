@@ -19,51 +19,41 @@ describe "Retryable#retryable" do
     return retryable(*opts) { |*args| @count += 1; yield *args }
   end
 
-  it "should not affect the return value of the block given" do
+  it "should not affect the return value of the block" do
     count_retryable { 'foo' }.should == 'foo'
     @count.should == 1
   end
 
-  it "should not affect the return value of the block given when there is a retry" do
+  it "should not affect the return value when there is a retry" do
     count_retryable { |tries| raise StandardError if tries < 1; 'foo' }.should == 'foo'
     @count.should == 2
   end
 
   it "passes the exception to the application" do
-    lambda { count_retryable { raise StandardError } }.should raise_error(StandardError)
+    lambda { count_retryable { raise IOError } }.should raise_error IOError
     @count.should == 2
   end
 
   it "should not catch Exceptions by default" do
-    lambda { count_retryable { raise Exception } }.should raise_error(Exception)
+    lambda { count_retryable { raise Exception } }.should raise_error Exception
     @count.should == 1
   end
 
-  describe "with the :tries option set" do
-    before(:each) do
-      @retryable_opts = {:tries => 3}
-    end
-
-    it "uses retries :tries times when the exception to retry on occurs every time" do
-      lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
-      @num_calls.should == 4
-    end
+  it "retries the specified number of times" do
+    lambda { count_retryable(:tries => 3) { raise StandardError } }.should raise_error StandardError
+    @count.should == 4
   end
 
-  describe "with the :on option set" do
-    before(:each) do
-      @retryable_opts = {:on => StandardError}
-    end
+  it "retries exceptions that are covered by :on" do
+    # FloatDomainError is a subclass of RangeError
+    lambda { count_retryable(:on => RangeError) { raise FloatDomainError } }.should raise_error FloatDomainError
+    @count.should == 2
+  end
 
-    it "should catch any subclass exceptions" do
-      do_retry(:raising => IOError, :when => lambda {@num_calls == 1})
-      @num_calls.should == 2
-    end
-
-    it "should not catch any superclass exceptions" do
-      lambda {do_retry(:raising => Exception, :when => lambda {@num_calls == 1})}.should raise_error(Exception)
-      @num_calls.should == 1
-    end
+  it "doesn't retry exceptions that aren't covered by :on" do
+    # NameError is a sibliing of RangeError, not a subclass
+    lambda { count_retryable(:on => RangeError) { raise NameError } }.should raise_error NameError
+    @count.should == 1
   end
 
   describe "with the :matching option set" do
