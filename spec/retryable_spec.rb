@@ -1,9 +1,11 @@
 require File.dirname(File.absolute_path(__FILE__)) + '/spec_helper'
 
-# TODO: test setting the global options
-
 describe "Retryable#retryable" do
   include Retryable
+
+  before :each do
+    retryable_options :reset
+  end
 
   def count_retryable *opts
     @count = 0
@@ -62,10 +64,22 @@ describe "Retryable#retryable" do
     @count.should == 4
   end
 
+  it "with all the options set globally" do
+    retryable_options :tries => 3, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/
+    count_retryable { |c| raise "my IO timeout" if c < 3 }
+    @count.should == 4
+  end
+
   it "sends the previous exception to the block" do
     retryable { |tries, e|
       raise IOError if tries == 0         # first time through the loop
       e.should be_an_instance_of IOError  # make sure second time matches the first
     }
+  end
+
+  it "accepts :tries as a global option" do
+    retryable_options :tries => 3
+    lambda { count_retryable { raise StandardError } }.should raise_error StandardError
+    @count.should == 4
   end
 end
