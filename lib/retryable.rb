@@ -24,12 +24,10 @@ module Retryable
       raise unless exception.message =~ opts[:matching]
 
       retries += 1
-      if retries < opts[:tries]
-        sleep opts[:sleep]
-        retry
-      end
-    end
+      raise if retries > opts[:tries]
 
-    yield
+      sleep opts[:sleep]
+      retry
+    end
   end
 end
