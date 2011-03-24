@@ -56,20 +56,14 @@ describe "Retryable#retryable" do
     @count.should == 1
   end
 
-  describe "with the :matching option set" do
-    before(:each) do
-      @retryable_opts = {:matching => /IO timeout/}
-    end
+  it "should catch an exception that matches the regex" do
+    count_retryable(:matching => /IO timeout/) { |c| raise "yo, IO timeout!" if c == 0 }
+    @count.should == 2
+  end
 
-    it "should catch an exception that matches the regexp" do
-      lambda {do_retry(:raising => "there was like an IO timeout and stuffs", :when => lambda {@num_calls == 1})}.should_not raise_error(RuntimeError)
-      @num_calls.should == 2
-    end
-
-    it "should not catch an exception that doesn't match the regexp" do
-      lambda {do_retry(:raising => "ERRROR of sorts", :when => lambda {@num_calls == 1})}.should raise_error(RuntimeError)
-      @num_calls.should == 1
-    end
+  it "should not catch an exception that doesn't match the regex" do
+    lambda { count_retryable(:matching => /TimeError/) { raise "yo, IO timeout!" } }.should raise_error RuntimeError
+    @count.should == 1
   end
 
   describe "with all the options set" do
