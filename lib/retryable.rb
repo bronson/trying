@@ -13,20 +13,19 @@ module Retryable
 
   def retryable options = {}, &block
     opts = retryable_options.merge options
-    return nil if opts[:tries] == 0
+    return nil if opts[:tries] < 1
 
     retry_exception = [opts[:on]].flatten
-    tries           = opts[:tries]
-    message_pattern = opts[:matching]
-    sleep_time      = opts[:sleep]
+    retries = 0
 
     begin
       return yield
     rescue *retry_exception => exception
-      raise unless exception.message =~ message_pattern
+      raise unless exception.message =~ opts[:matching]
 
-      if (tries -= 1) > 0
-        sleep sleep_time
+      retries += 1
+      if retries < opts[:tries]
+        sleep opts[:sleep]
         retry
       end
     end
