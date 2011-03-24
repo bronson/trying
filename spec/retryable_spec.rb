@@ -3,7 +3,7 @@ require File.dirname(File.absolute_path(__FILE__)) + '/spec_helper'
 describe "Retryable#retryable" do
   include Retryable
 
-  def do_retry(opts = {})
+  def do_retry(opts = {})  ##########
     @num_calls = 0
     return retryable(@retryable_opts) do
       @num_calls += 1
@@ -14,34 +14,29 @@ describe "Retryable#retryable" do
     end
   end
 
-  describe "with default options" do
-    before(:each) do
-      @retryable_opts = {}
-    end
+  def count_retryable *opts
+    @count = 0
+    return retryable(*opts) { |*args| @count += 1; yield *args }
+  end
 
-    it "should not affect the return value of the block given" do
-      retryable { 'foo' }.should == 'foo'
-    end
+  it "should not affect the return value of the block given" do
+    count_retryable { 'foo' }.should == 'foo'
+    @count.should == 1
+  end
 
-    it "should not affect the return value of the block given when there is a retry" do
-      do_retry(:returning => 'foo', :raising => StandardError, :when => lambda { @num_calls == 1 } ).should == 'foo'
-      @num_calls.should == 2
-    end
+  it "should not affect the return value of the block given when there is a retry" do
+    count_retryable { |tries| raise StandardError if tries < 1; 'foo' }.should == 'foo'
+    @count.should == 2
+  end
 
-    it "uses default options of :tries => 1 and :on => StandardError when none is given" do
-      lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
-      @num_calls.should == 2
-    end
+  it "passes the exception to the application" do
+    lambda { count_retryable { raise StandardError } }.should raise_error(StandardError)
+    @count.should == 2
+  end
 
-    it "should not catch Exceptions by default" do
-      lambda {do_retry(:raising => Exception)}.should raise_error(Exception)
-      @num_calls.should == 1
-    end
-
-    it "does not retry if none of the retry conditions occur" do
-      do_retry
-      @num_calls.should == 1
-    end
+  it "should not catch Exceptions by default" do
+    lambda { count_retryable { raise Exception } }.should raise_error(Exception)
+    @count.should == 1
   end
 
   describe "with the :tries option set" do
