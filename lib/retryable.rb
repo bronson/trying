@@ -1,10 +1,18 @@
 module Retryable
-  def retryable(options = {}, &block)
-    opts = { :tries     => 1, 
-             :on        => StandardError,
-             :sleep     => 0,
-             :matching  => /.*/ }.merge(options)
+  def retryable_options options=nil
+    @retryable_options ||= {
+      :tries     => 1,
+      :on        => StandardError,
+      :sleep     => 0,
+      :matching  => /.*/,
+    }
 
+    @retryable_options.merge!(options) if options
+    @retryable_options
+  end
+
+  def retryable options = {}, &block
+    opts = retryable_options.merge options
     return nil if opts[:tries] == 0
   
     retry_exception = [opts[:on]].flatten
