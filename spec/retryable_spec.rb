@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require File.dirname(File.absolute_path(__FILE__)) + '/spec_helper'
 
 describe "Retryable#retryable" do
   include Retryable
