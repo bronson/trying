@@ -16,12 +16,12 @@ module Retryable
     return nil if opts[:tries] < 1
 
     previous_exception = nil
-    retry_exception = [opts[:on]].flatten
+    retry_exceptions = [opts[:on]].flatten
     retries = 0
 
     begin
       return yield retries, previous_exception
-    rescue *retry_exception => exception
+    rescue *retry_exceptions => exception
       raise unless exception.message =~ opts[:matching]
 
       retries += 1
