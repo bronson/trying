@@ -1,9 +1,6 @@
-# Retryable#retryable
+# Retryable
 
-## Description
-
-Runs a code block, and retries it when an exception occurs. It's great when
-working with flakey webservices (for example).
+Runs a code block and retries it when an exception occurs.
 
 It's configured using four optional parameters `:tries`, `:on`, `:matching` and `:sleep`, and
 runs the passed block. Should an exception occur, it'll retry for (tries-1) times.
@@ -18,49 +15,44 @@ Open an URL, retry up to two times when an `OpenURI::HTTPError` occurs.
 
     require "retryable"
     require "open-uri"
-    
+
     include Retryable
-    
+
     retryable( :tries => 3, :on => OpenURI::HTTPError ) do
       xml = open( "http://example.com/test.xml" ).read
     end
 
-Do _something_, retry up to four times for either `ArgumentError` or 
+Do _something_, retry up to four times for either `ArgumentError` or
 `TimeoutError` exceptions.
 
     require "retryable"
     include Retryable
-    
+
     retryable( :tries => 5, :on => [ ArgumentError, TimeoutError ] ) do
       # some crazy code
     end
-    
-    
-    
-Do _something_, retry up to three times for `ArgumentError` exceptions 
+
+
+
+Do _something_, retry up to three times for `ArgumentError` exceptions
 which smell like "Bacon", but have a nap between tries.
 
     require "retryable"
     include Retryable
-    
-    retryable( :tries => 3, 
-               :on => ArgumentError, 
+
+    retryable( :tries => 3,
+               :on => ArgumentError,
                :matching => /Bacon/,
                :sleep => 3) do
 
       # some crazy code about bacon
     end
-    
-    
+
+
 
 
 ## Defaults
 
     :tries => 1, :on => Exception, :matching => /.*/, :sleep => 0
-    
 
-## Thanks
-
-Many thanks to [Chu Yeow for this nifty piece of code](http://blog.codefront.net/2008/01/14/retrying-code-blocks-in-ruby-on-exceptions-whatever/). Look, I liked it
-enough to enhance it a little bit and build a gem from it! :)
 
