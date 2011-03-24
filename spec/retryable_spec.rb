@@ -3,17 +3,6 @@ require File.dirname(File.absolute_path(__FILE__)) + '/spec_helper'
 describe "Retryable#retryable" do
   include Retryable
 
-  def do_retry(opts = {})  ##########
-    @num_calls = 0
-    return retryable(@retryable_opts) do
-      @num_calls += 1
-      if exception = opts[:raising]
-        raise exception if opts[:when].nil? || opts[:when].call
-      end
-      opts[:returning]
-    end
-  end
-
   def count_retryable *opts
     @count = 0
     return retryable(*opts) { |*args| @count += 1; yield *args }
@@ -66,17 +55,8 @@ describe "Retryable#retryable" do
     @count.should == 1
   end
 
-  describe "with all the options set" do
-    before(:each) do
-      @retryable_opts = { :tries    => 3,
-                          :on       => RuntimeError,
-                          :sleep    => 0.3,
-                          :matching => /IO timeout/ }
-    end
-
-    it "should still work as expected" do
-      lambda {do_retry(:raising => "my IO timeout", :when => lambda {@num_calls < 4})}.should_not raise_error
-      @num_calls.should == 4
-    end
+  it "with all the options set" do
+    count_retryable(:tries => 3, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/) { |c| raise "my IO timeout" if c < 3 }
+    @count.should == 4
   end
 end
