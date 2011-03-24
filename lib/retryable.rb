@@ -4,7 +4,7 @@ module Retryable
     @retryable_options ||= {
       :tries     => 1,
       :on        => StandardError,
-      :sleep     => 0,
+      :sleep     => 1,
       :matching  => /.*/,
     }
 
@@ -24,12 +24,11 @@ module Retryable
       return yield retries, previous_exception
     rescue *retry_exceptions => exception
       raise unless exception.message =~ opts[:matching]
-
-      retries += 1
-      raise if retries > opts[:tries]
+      raise if retries >= opts[:tries]
 
       previous_exception = exception
       sleep opts[:sleep]
+      retries += 1
       retry
     end
   end
