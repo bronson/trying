@@ -1,5 +1,6 @@
 module Retryable
   def retryable_options options=nil
+    @retryable_options = options = nil if options == :reset
     @retryable_options ||= {
       :tries     => 1,
       :on        => StandardError,
