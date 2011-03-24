@@ -18,14 +18,9 @@ task :default => ["spec"]
 #   http://rubygems.org/read/chapter/20
 #
 spec = Gem::Specification.new do |s|
-
-  # Change these as appropriate
   s.name              = "retryable"
-  s.version           = "0.1.0"
-  s.summary           = "What this thing does"
-  s.author            = "Craig 'The Craif' Mackenzie and Niko Felger"
-  s.email             = "developers@songkick.com"
-  s.homepage          = "http://www.songkick.com"
+  s.version           = "0.2.0"
+  s.summary           = "Runs a code block and retries it when an exception occurs."
 
   s.has_rdoc          = true
   s.extra_rdoc_files  = %w(README.markdown)
@@ -48,7 +43,7 @@ end
 # be automatically building a gem for this project. If you're not
 # using GitHub, edit as appropriate.
 #
-# To publish your gem online, install the 'gemcutter' gem; Read more 
+# To publish your gem online, install the 'gemcutter' gem; Read more
 # about that here: http://gemcutter.org/pages/gem_docs
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.gem_spec = spec

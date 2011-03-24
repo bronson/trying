@@ -18,7 +18,7 @@ describe "Retryable#retryable" do
     before(:each) do
       @retryable_opts = {}
     end
-    
+
     it "should not affect the return value of the block given" do
       retryable { 'foo' }.should == 'foo'
     end
@@ -32,7 +32,7 @@ describe "Retryable#retryable" do
       lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
       @num_calls.should == 2
     end
-  
+
     it "should not catch Exceptions by default" do
       lambda {do_retry(:raising => Exception)}.should raise_error(Exception)
       @num_calls.should == 1
@@ -48,13 +48,13 @@ describe "Retryable#retryable" do
     before(:each) do
       @retryable_opts = {:tries => 3}
     end
-    
+
     it "uses retries :tries times when the exception to retry on occurs every time" do
       lambda {do_retry(:raising => StandardError)}.should raise_error(StandardError)
       @num_calls.should == 4
     end
   end
-  
+
   describe "with the :on option set" do
     before(:each) do
       @retryable_opts = {:on => StandardError}
@@ -64,13 +64,13 @@ describe "Retryable#retryable" do
       do_retry(:raising => IOError, :when => lambda {@num_calls == 1})
       @num_calls.should == 2
     end
-    
+
     it "should not catch any superclass exceptions" do
       lambda {do_retry(:raising => Exception, :when => lambda {@num_calls == 1})}.should raise_error(Exception)
       @num_calls.should == 1
     end
   end
-  
+
   describe "with the :matching option set" do
     before(:each) do
       @retryable_opts = {:matching => /IO timeout/}
@@ -80,13 +80,13 @@ describe "Retryable#retryable" do
       lambda {do_retry(:raising => "there was like an IO timeout and stuffs", :when => lambda {@num_calls == 1})}.should_not raise_error(RuntimeError)
       @num_calls.should == 2
     end
-    
+
     it "should not catch an exception that doesn't match the regexp" do
       lambda {do_retry(:raising => "ERRROR of sorts", :when => lambda {@num_calls == 1})}.should raise_error(RuntimeError)
       @num_calls.should == 1
     end
   end
-  
+
   describe "with all the options set" do
     before(:each) do
       @retryable_opts = { :tries    => 3,
@@ -94,7 +94,7 @@ describe "Retryable#retryable" do
                           :sleep    => 0.3,
                           :matching => /IO timeout/ }
     end
-    
+
     it "should still work as expected" do
       lambda {do_retry(:raising => "my IO timeout", :when => lambda {@num_calls < 4})}.should_not raise_error
       @num_calls.should == 4
