@@ -144,4 +144,10 @@ describe "Retryable#retryable" do
     }
     @try_count.should == 4
   end
+
+  it "accepts a proc for sleep" do
+    [1, 4, 16, 64].each { |i| should_receive(:sleep).once.ordered.with(i) }
+    retryable_options :tries => 5, :sleep => lambda { |n| 4**n }
+    should_raise(RangeError) { retryable { raise RangeError } }
+  end
 end
