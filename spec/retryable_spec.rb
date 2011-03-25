@@ -12,10 +12,15 @@ describe "Retryable#retryable" do
     raise "Don't call sleep during testing!"
   end
 
+  def should_raise e
+    lambda { yield }.should raise_error e
+  end
+
   def count_retryable *opts
     @count = 0
     return retryable(*opts) { |*args| @count += 1; yield *args }
   end
+
 
   it "should not affect the return value of the block" do
     should_not_receive :sleep
@@ -31,13 +36,17 @@ describe "Retryable#retryable" do
 
   it "passes the exception to the application" do
     should_receive(:sleep).once.with(1)
-    lambda { count_retryable { raise IOError } }.should raise_error IOError
+    should_raise(IOError) {
+      count_retryable { raise IOError }
+    }
     @count.should == 2
   end
 
   it "should not catch Exceptions by default" do
     should_not_receive :sleep
-    lambda { count_retryable { raise Exception } }.should raise_error Exception
+    should_raise(Exception) {
+      count_retryable { raise Exception }
+    }
     @count.should == 1
   end
 
@@ -49,21 +58,27 @@ describe "Retryable#retryable" do
 
   it "retries the specified number of times" do
     should_receive(:sleep).exactly(3).times.with(1)
-    lambda { count_retryable(:tries => 3) { raise StandardError } }.should raise_error StandardError
+    should_raise(StandardError) {
+      count_retryable(:tries => 3) { raise StandardError }
+    }
     @count.should == 4
   end
 
   it "retries exceptions that are covered by :on" do
     # FloatDomainError is a subclass of RangeError
     should_receive(:sleep).once.with(1)
-    lambda { count_retryable(:on => RangeError) { raise FloatDomainError } }.should raise_error FloatDomainError
+    should_raise(FloatDomainError) {
+      count_retryable(:on => RangeError) { raise FloatDomainError }
+    }
     @count.should == 2
   end
 
   it "doesn't retry exceptions that aren't covered by :on" do
     # NameError is a sibliing of RangeError, not a subclass
     should_not_receive :sleep
-    lambda { count_retryable(:on => RangeError) { raise NameError } }.should raise_error NameError
+    should_raise(NameError) {
+      count_retryable(:on => RangeError) { raise NameError }
+    }
     @count.should == 1
   end
 
@@ -75,7 +90,9 @@ describe "Retryable#retryable" do
 
   it "should not catch an exception that doesn't match the regex" do
     should_not_receive :sleep
-    lambda { count_retryable(:matching => /TimeError/) { raise "yo, IO timeout!" } }.should raise_error RuntimeError
+    should_raise(RuntimeError) {
+      count_retryable(:matching => /TimeError/) { raise "yo, IO timeout!" }
+    }
     @count.should == 1
   end
 
@@ -103,7 +120,9 @@ describe "Retryable#retryable" do
   it "accepts :tries as a global option" do
     should_receive(:sleep).exactly(3).times.with(1)
     retryable_options :tries => 3
-    lambda { count_retryable { raise RangeError } }.should raise_error RangeError
+    should_raise(RangeError) {
+      count_retryable { raise RangeError }
+    }
     @count.should == 4
   end
 end
