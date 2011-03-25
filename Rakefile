@@ -1,22 +1,13 @@
 require "rubygems"
 require "rake/gempackagetask"
 require "rake/rdoctask"
-
-require "spec"
-require "spec/rake/spectask"
-Spec::Rake::SpecTask.new do |t|
-  t.spec_opts = %w(--format specdoc --colour)
-  t.libs = ["spec"]
-end
+require "rspec/core/rake_task"
 
 
+RSpec::Core::RakeTask.new :spec
 task :default => ["spec"]
 
-# This builds the actual gem. For details of what all these options
-# mean, and other ones you can add, check the documentation here:
-#
-#   http://rubygems.org/read/chapter/20
-#
+
 spec = Gem::Specification.new do |s|
   s.name              = "retryable"
   s.version           = "0.2.0"
@@ -26,17 +17,12 @@ spec = Gem::Specification.new do |s|
   s.extra_rdoc_files  = %w(README.markdown)
   s.rdoc_options      = %w(--main README.markdown)
 
-  # Add any extra files to include in the gem
   s.files             = %w(README.markdown retryable.gemspec) + Dir.glob("{spec,lib/**/*}")
   s.require_paths     = ["lib"]
 
-  # If you want to depend on other gems, add them here, along with any
-  # relevant versions
-  # s.add_dependency("some_other_gem", "~> 0.1.0")
-
-  # If your tests use any gems, include them here
   s.add_development_dependency("rspec")
 end
+
 
 # This task actually builds the gem. We also regenerate a static
 # .gemspec file, which is useful if something (i.e. GitHub) will
@@ -48,6 +34,7 @@ end
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.gem_spec = spec
 end
+
 
 desc "Build the gemspec file #{spec.name}.gemspec"
 task :gemspec do
