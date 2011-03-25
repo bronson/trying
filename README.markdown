@@ -1,13 +1,86 @@
 # Retryable
 
-Runs a code block and retries it when an exception occurs.
+Run a code block and automatically retry when an exception occurs.
 
-It's configured using four optional parameters `:tries`, `:on`, `:matching` and `:sleep`, and
-runs the passed block. Should an exception occur, it'll retry for (tries-1) times.
+    retryable(:tries => 3, :on => IOError) do
+        read_flaky_sector
+    end
 
-Should the number of retries be reached without success, the last exception
-will be raised.
+This will call read_flaky_sector up to 3 times and either return the result
+if succeeds or pass the last exception if it fails.
 
+
+### Install
+
+* Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
+
+You must include retryable before using it.
+This allows unrelated libraries to use retryable without conflicting.
+To use it globally:
+
+    require "retryable"
+    include Retryable
+
+
+### Options
+
+Retryable uses these defaults:
+
+* :tries => 2
+* :on => StandardError
+* :sleep => 1
+* :matching => /.\*/
+
+    $ ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
+
+You can pass options to the retryable command (see above) or
+use retryable_options to change the defaults:
+
+    retryable_options :tries => 5, :sleep => 20
+    retryable { catch_dog }
+
+This will make 5 attempts, potentially sleeping for a total of 80 seconds.
+
+
+### Sleeping
+
+By default Retryable waits for one second between retries.  You can change this:
+
+    retryable(:sleep => 0) { }                # don't pause at all between retries
+    retryable(:sleep => 10) { }               # sleep ten seconds between retries
+    retryable(:sleep => lambda { |n| 4**n }) { }   # sleep 1, 4, 16, etc. each try
+
+
+### Exceptions
+
+By default Retryable will retry any exception that inherits from StandardError.
+This catches most runtime errors (IOError, floating point) but lets most
+other errors (missing method, nil reference) pass.
+
+You probably only want to retry specific exceptions and let anything unexpected
+filter upward:
+
+    :retryable(:on => [IOError, RangeError]) { ... }
+
+More on Ruby exceptions:
+
+ * <http://blog.nicksieger.com/articles/2006/09/06/rubys-exception-hierarchy>
+ * <http://www.zenspider.com/Languages/Ruby/QuickRef.html#34>
+
+You can also retry based on the exception message:
+
+    :retryable(:matching => /export/) { ... }
+
+
+### Callback
+
+Your callback is called with two optional parameters: the number of tries until now,
+and the most recent exception:
+
+    retryable { |retries, exception|
+      puts "try #{retries} failed: #{exception}" if retries > 0
+      pick_up_soap
+    }
 
 ## Examples
 
@@ -18,41 +91,26 @@ Open an URL, retry up to two times when an `OpenURI::HTTPError` occurs.
 
     include Retryable
 
-    retryable( :tries => 3, :on => OpenURI::HTTPError ) do
-      xml = open( "http://example.com/test.xml" ).read
-    end
-
-Do _something_, retry up to four times for either `ArgumentError` or
-`TimeoutError` exceptions.
-
-    require "retryable"
-    include Retryable
-
-    retryable( :tries => 5, :on => [ ArgumentError, TimeoutError ] ) do
-      # some crazy code
+    retryable(:tries => 3, :on => OpenURI::HTTPError) do
+      xml = open("http://google.com/").read
     end
 
 
+## License
 
-Do _something_, retry up to three times for `ArgumentError` exceptions
-which smell like "Bacon", but have a nap between tries.
-
-    require "retryable"
-    include Retryable
-
-    retryable( :tries => 3,
-               :on => ArgumentError,
-               :matching => /Bacon/,
-               :sleep => 3) do
-
-      # some crazy code about bacon
-    end
+Public domain.
 
 
+## History
 
+The story until now...
 
-## Defaults
-
-    :tries => 1, :on => Exception, :matching => /.*/, :sleep => 0
-
-
+* 2008 [Cheah Chu Yeow](https://github.com/chuyeow/try)
+  wrote retryable as a monkeypatch to Kernel and wrote a
+  [blog post](http://blog.codefront.net/2008/01/14/retrying-code-blocks-in-ruby-on-exceptions-whatever/).
+* 2009 [Carlo Zottmann](https://github.com/carlo/retryable)
+  converted it to a gem and made it a separate method.
+* 2010 [Songkick](https://github.com/songkick/retryable)
+  converted it to a module and added :matching and :sleep.
+* 2011 [Scott Bronson](https://github.com/bronson/retryable)
+  rebased onto orig repo, added some features and cleanups.
