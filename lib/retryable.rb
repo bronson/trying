@@ -2,7 +2,7 @@ module Retryable
   def retryable_options options=nil
     @retryable_options = options = nil if options == :reset
     @retryable_options ||= {
-      :tries     => 1,
+      :tries     => 2,
       :on        => StandardError,
       :sleep     => 1,
       :matching  => /.*/,
@@ -24,7 +24,7 @@ module Retryable
       return yield retries, previous_exception
     rescue *retry_exceptions => exception
       raise unless exception.message =~ opts[:matching]
-      raise if retries >= opts[:tries]
+      raise if retries+1 >= opts[:tries]
 
       previous_exception = exception
       sleep opts[:sleep]
