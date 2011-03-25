@@ -83,7 +83,7 @@ describe "Retryable#retryable" do
     @try_count.should == 3
   end
 
-  it "retries exceptions that are covered by :on" do
+  it "retries an exception that is covered by :on" do
     # FloatDomainError is a subclass of RangeError
     should_receive(:sleep).once.with(1)
     should_raise(FloatDomainError) {
@@ -99,6 +99,15 @@ describe "Retryable#retryable" do
       count_retryable(:on => RangeError) { raise NameError }
     }
     @try_count.should == 1
+  end
+
+  it "retries multiple exceptions that are covered by :on" do
+    # FloatDomainError is a subclass of RangeError
+    should_receive(:sleep).once.with(1)
+    should_raise(FloatDomainError) {
+      count_retryable(:on => [IOError, RangeError, NoMethodError]) { raise FloatDomainError }
+    }
+    @try_count.should == 2
   end
 
   it "should catch an exception that matches the regex" do
