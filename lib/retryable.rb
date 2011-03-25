@@ -27,7 +27,7 @@ module Retryable
       raise if retries+1 >= opts[:tries]
 
       previous_exception = exception
-      sleep opts[:sleep]
+      sleep opts[:sleep].respond_to?(:call) ? opts[:sleep].call(retries) : opts[:sleep]
       retries += 1
       retry
     end
