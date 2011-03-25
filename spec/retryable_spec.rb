@@ -18,7 +18,10 @@ describe "Retryable#retryable" do
 
   def count_retryable *opts
     @try_count = 0
-    return retryable(*opts) { |*args| @try_count += 1; yield *args }
+    return retryable(*opts) { |*args|
+      @try_count += 1
+      yield *args
+    }
   end
 
 
@@ -42,7 +45,7 @@ describe "Retryable#retryable" do
     @try_count.should == 2
   end
 
-  it "should not catch Exceptions by default" do
+  it "should not retry Exceptions by default" do
     should_not_receive :sleep
     should_raise(Exception) {
       count_retryable { raise Exception }
@@ -52,16 +55,32 @@ describe "Retryable#retryable" do
 
   it "doesn't call the proc if :tries is 0" do
     should_not_receive :sleep
-    count_retryable(:tries => 0) { raise StandardError }
+    count_retryable(:tries => 0) { raise RangeError }
     @try_count.should == 0
   end
 
+  it "calls the proc once if :tries is 1" do
+    should_not_receive :sleep
+    should_raise(RangeError) {
+      count_retryable(:tries => 1) { raise RangeError }
+    }
+    @try_count.should == 1
+  end
+
+  it "calls the proc twice if :tries is 2" do
+    should_receive(:sleep).once.with(1)
+    should_raise(RangeError) {
+      count_retryable(:tries => 2) { raise RangeError }
+    }
+    @try_count.should == 2
+  end
+
   it "retries the specified number of times" do
-    should_receive(:sleep).exactly(3).times.with(1)
+    should_receive(:sleep).exactly(2).times.with(1)
     should_raise(StandardError) {
       count_retryable(:tries => 3) { raise StandardError }
     }
-    @try_count.should == 4
+    @try_count.should == 3
   end
 
   it "retries exceptions that are covered by :on" do
@@ -98,13 +117,13 @@ describe "Retryable#retryable" do
 
   it "works with all the options set" do
     should_receive(:sleep).exactly(3).times.with(0.3)
-    count_retryable(:tries => 3, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/) { |c| raise "my IO timeout" if c < 3 }
+    count_retryable(:tries => 4, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/) { |c| raise "my IO timeout" if c < 3 }
     @try_count.should == 4
   end
 
   it "works with all the options set globally" do
     should_receive(:sleep).exactly(3).times.with(0.3)
-    retryable_options :tries => 3, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/
+    retryable_options :tries => 4, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/
     count_retryable { |c| raise "my IO timeout" if c < 3 }
     @try_count.should == 4
   end
@@ -119,7 +138,7 @@ describe "Retryable#retryable" do
 
   it "accepts :tries as a global option" do
     should_receive(:sleep).exactly(3).times.with(1)
-    retryable_options :tries => 3
+    retryable_options :tries => 4
     should_raise(RangeError) {
       count_retryable { raise RangeError }
     }
