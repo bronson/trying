@@ -1,5 +1,12 @@
 module Retryable
   class NestingError < Exception; end
+  class InvalidOptions < RuntimeError; end
+
+  def retryable_merge dst, src
+    typos = src.keys - dst.keys
+    raise InvalidOptions.new("Invalid options: #{typos.join(", ")}") unless typos.empty?
+    dst.merge! src
+  end
 
   def retryable_options options=nil
     @retryable_options = options = nil if options == :reset   # for testing
@@ -11,12 +18,13 @@ module Retryable
       :detect_nesting => false,
     }
 
-    @retryable_options.merge!(options) if options
+    retryable_merge @retryable_options, options if options
     @retryable_options
   end
 
   def retryable options = {}, &block
-    opts = retryable_options.merge options
+    opts = retryable_options
+    retryable_merge opts, options
     return nil if opts[:tries] < 1
 
     raise NestingError.new("Nested retryable: #{@retryable_nest}") if @retryable_nest
