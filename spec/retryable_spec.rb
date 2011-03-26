@@ -169,6 +169,8 @@ describe "Retryable#retryable" do
     should_raise(NestingError) {
       retryable { retryable { raise "not reached" } }
     }
+    # make sure that the nesting flag is turned off
+    retryable { 'foo' }.should == 'foo'
   end
 
   it "detects nesting even if inner loop refuses" do
