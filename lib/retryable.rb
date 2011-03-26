@@ -44,6 +44,8 @@ module Retryable
       sleep opts[:sleep].respond_to?(:call) ? opts[:sleep].call(retries) : opts[:sleep]
       retries += 1
       retry
+    ensure
+      @retryable_nest = nil
     end
   end
 end
