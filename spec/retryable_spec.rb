@@ -178,4 +178,17 @@ describe "Retryable#retryable" do
       }
     }
   end
+
+  it "doesn't allow invalid options" do
+    should_raise(InvalidOptions) {
+      retryable(:bad_option => 2) { raise "this is bad" }
+    }
+  end
+
+  it "doesn't allow invalid global options" do
+    should_raise(InvalidOptions) {
+      retryable_options :bad_option => 'bogus'
+      raise "not reached"
+    }
+  end
 end
