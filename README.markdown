@@ -30,6 +30,7 @@ Retryable uses these defaults:
 * :on => StandardError
 * :sleep => 1
 * :matching => /.\*/
+* :detect_nesting => false
 
     $ ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
 
@@ -93,10 +94,10 @@ Nesting detection is off by default but it's easy to turn on.
       retryable { thread_needle }   # thread_needle will never be called
     }
 
-When Retryable detects nesting, it throws an Exception, not a StandardError.
-This way the error should propagate all the way out.  Beware, if your outer
+When Retryable detects nesting it throws a Exception (not a StandardError)
+so the error should propagate all the way out.  Beware!  If your outer
 loop specifies :on => Exception, your inner loop will raise the NestedException
-and your outer one will happily keep retrying it!
+but your outer one will happily keep retrying it!
 
 
 ## Examples
