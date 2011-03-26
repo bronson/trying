@@ -110,6 +110,13 @@ describe "Retryable#retryable" do
     @try_count.should == 2
   end
 
+  it "doesn't retry any exception if :on is empty" do
+    should_raise(FloatDomainError) {
+      count_retryable(:on => []) { raise FloatDomainError }
+    }
+    @try_count.should == 1
+  end
+
   it "should catch an exception that matches the regex" do
     should_receive(:sleep).once.with(1)
     count_retryable(:matching => /IO timeout/) { |c| raise "yo, IO timeout!" if c == 0 }
