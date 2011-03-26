@@ -10,7 +10,7 @@ This will call read_flaky_sector up to 3 times and either return the result
 if succeeds or pass the last exception if it fails.
 
 
-### Install
+## Install
 
 * Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
 
@@ -22,7 +22,7 @@ To use it globally:
     include Retryable
 
 
-### Options
+## Options
 
 Retryable uses these defaults:
 
@@ -42,7 +42,7 @@ use retryable_options to change the defaults:
 This will make 5 attempts, potentially sleeping for a total of 80 seconds.
 
 
-### Sleeping
+## Sleeping
 
 By default Retryable waits for one second between retries.  You can change this:
 
@@ -51,7 +51,7 @@ By default Retryable waits for one second between retries.  You can change this:
     retryable(:sleep => lambda { |n| 4**n }) { }   # sleep 1, 4, 16, etc. each try
 
 
-### Exceptions
+## Exceptions
 
 By default Retryable will retry any exception that inherits from StandardError.
 This catches most runtime errors (IOError, floating point) but lets most
@@ -72,15 +72,32 @@ You can also retry based on the exception message:
     :retryable(:matching => /export/) { ... }
 
 
-### Callback
+## Block Parameters
 
-Your callback is called with two optional parameters: the number of tries until now,
+Your block is called with two optional parameters: the number of tries until now,
 and the most recent exception:
 
     retryable { |retries, exception|
       puts "try #{retries} failed: #{exception}" if retries > 0
       pick_up_soap
     }
+
+
+## Nesting
+
+Accidentally nesting callbacks can be a real problem.  What you thought was
+a 6 minute maximum delay could end up being 36 minutes or worse.
+Nesting detection is off by default but it's easy to turn on.
+
+    retryable(:detect_nesting => true) {
+      retryable { thread_needle }   # thread_needle will never be called
+    }
+
+When Retryable detects nesting, it throws an Exception, not a StandardError.
+This way the error should propagate all the way out.  Beware, if your outer
+loop specifies :on => Exception, your inner loop will raise the NestedException
+and your outer one will happily keep retrying it!
+
 
 ## Examples
 
@@ -114,3 +131,4 @@ The story until now...
   converted it to a module and added :matching and :sleep.
 * 2011 [Scott Bronson](https://github.com/bronson/retryable)
   rebased onto orig repo, added some features and cleanups.
+

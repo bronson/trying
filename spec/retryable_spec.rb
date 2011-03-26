@@ -159,4 +159,23 @@ describe "Retryable#retryable" do
     retryable_options :tries => 5, :sleep => lambda { |n| 4**n }
     should_raise(RangeError) { retryable { raise RangeError } }
   end
+
+  it "should allow nesting by default" do
+    retryable { retryable { 'inner' } }.should == 'inner'
+  end
+
+  it "detects nesting" do
+    retryable_options :detect_nesting => true
+    should_raise(NestingError) {
+      retryable { retryable { raise "not reached" } }
+    }
+  end
+
+  it "detects nesting even if inner loop refuses" do
+    should_raise(NestingError) {
+      retryable(:detect_nesting => true) {
+        retryable(:detect_nesting => false) { raise "not reached" }
+      }
+    }
+  end
 end
