@@ -1,13 +1,19 @@
 # Retryable
 
+[![Travis Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
+
 Run a code block and automatically retry when an exception occurs.
+
+    require "retryable"
+    include Retryable
 
     retryable(:tries => 3, :on => IOError) do
         read_flaky_sector
     end
 
-This will call read_flaky_sector up to 3 times and either return the result
-if succeeds or pass the last exception if it fails.
+This will call read_flaky_sector up to 3 times and return the first
+result that doesn't cause an exception to be raised.  If all calls
+produce an exception, retryable will reraise the most recent one.
 
 
 ## Install
@@ -16,11 +22,11 @@ if succeeds or pass the last exception if it fails.
 
 You must include retryable before using it.
 This allows unrelated libraries to use retryable without conflicting.
-To use it globally:
 
-    require "retryable"
-    include Retryable
-
+    class MyUtility
+      include Retryable
+      retryable_options :tries => 10
+    end
 
 ## Options
 
@@ -32,20 +38,17 @@ Retryable uses these defaults:
 * :matching => /.\*/
 * :detect_nesting => false
 
-    $ ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
-
 You can pass options to the retryable command (see above) or
 use retryable_options to change the defaults:
 
     retryable_options :tries => 5, :sleep => 20
     retryable { catch_dog }
 
-This will make 5 attempts, potentially sleeping for a total of 80 seconds.
-
 
 ## Sleeping
 
-By default Retryable waits for one second between retries.  You can change this:
+By default Retryable waits for one second between retries.  You can change this
+and even provide your own exponential backoff scheme.
 
     retryable(:sleep => 0) { }                # don't pause at all between retries
     retryable(:sleep => 10) { }               # sleep ten seconds between retries
@@ -56,12 +59,18 @@ By default Retryable waits for one second between retries.  You can change this:
 
 By default Retryable will retry any exception that inherits from StandardError.
 This catches most runtime errors (IOError, floating point) but lets most
-other errors (missing method, nil reference) pass.
+more catastrophic errors (missing method, nil reference) pass through without
+being retried.
 
-You probably only want to retry specific exceptions and let anything unexpected
-filter upward:
+Generally you only want to retry a few specific errors:
 
     :retryable(:on => [IOError, RangeError]) { ... }
+
+You can also retry everything but, be warned, this is not what you want!
+You almost certainly do not want to retry method missing, out of memory,
+and a whole bunch of errors that won't be fixed by trying again.
+
+    :retryable(:on => Exception) { ... }
 
 More on Ruby exceptions:
 
@@ -76,7 +85,7 @@ You can also retry based on the exception message:
 ## Block Parameters
 
 Your block is called with two optional parameters: the number of tries until now,
-and the most recent exception:
+and the most recent exception.
 
     retryable { |retries, exception|
       puts "try #{retries} failed: #{exception}" if retries > 0
@@ -94,10 +103,9 @@ Nesting detection is off by default but it's easy to turn on.
       retryable { thread_needle }   # thread_needle will never be called
     }
 
-When Retryable detects nesting it throws a Exception (not a StandardError)
-so the error should propagate all the way out.  Beware!  If your outer
-loop specifies :on => Exception, your inner loop will raise the NestedException
-but your outer one will happily keep retrying it!
+When Retryable detects a nested call it throws a Retryable::NestedException.
+This is not a StandardError, so it's not retried by default, and the error
+will propagate all the way out.
 
 
 ## Examples
@@ -113,6 +121,9 @@ Open an URL, retry up to two times when an `OpenURI::HTTPError` occurs.
       xml = open("http://google.com/").read
     end
 
+Print the default settings:
+
+    ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
 
 ## License
 

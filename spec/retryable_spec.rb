@@ -1,4 +1,4 @@
-require File.dirname(File.absolute_path(__FILE__)) + '/../lib/retryable'
+require File.dirname(File.expand_path(__FILE__)) + '/../lib/retryable'
 
 describe "Retryable" do
   include Retryable
@@ -33,7 +33,7 @@ describe "Retryable" do
 
   it "should not affect the return value when there is a retry" do
     should_receive(:sleep).once.with(1)
-    count_retryable { |tries| raise StandardError if tries < 1; 'foo' }.should == 'foo'
+    count_retryable { |tries, ex| raise StandardError if tries < 1; 'foo' }.should == 'foo'
     @try_count.should == 2
   end
 
@@ -119,7 +119,7 @@ describe "Retryable" do
 
   it "should catch an exception that matches the regex" do
     should_receive(:sleep).once.with(1)
-    count_retryable(:matching => /IO timeout/) { |c| raise "yo, IO timeout!" if c == 0 }
+    count_retryable(:matching => /IO timeout/) { |c,e| raise "yo, IO timeout!" if c == 0 }
     @try_count.should == 2
   end
 
@@ -133,14 +133,14 @@ describe "Retryable" do
 
   it "works with all the options set" do
     should_receive(:sleep).exactly(3).times.with(0.3)
-    count_retryable(:tries => 4, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/) { |c| raise "my IO timeout" if c < 3 }
+    count_retryable(:tries => 4, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/) { |c,e| raise "my IO timeout" if c < 3 }
     @try_count.should == 4
   end
 
   it "works with all the options set globally" do
     should_receive(:sleep).exactly(3).times.with(0.3)
     retryable_options :tries => 4, :on => RuntimeError, :sleep => 0.3, :matching => /IO timeout/
-    count_retryable { |c| raise "my IO timeout" if c < 3 }
+    count_retryable { |c,e| raise "my IO timeout" if c < 3 }
     @try_count.should == 4
   end
 
@@ -173,7 +173,7 @@ describe "Retryable" do
 
   it "detects nesting" do
     retryable_options :detect_nesting => true
-    should_raise(NestingError) {
+    should_raise(Retryable::NestingError) {
       retryable { retryable { raise "not reached" } }
     }
     # make sure that the nesting flag is turned off
@@ -181,7 +181,7 @@ describe "Retryable" do
   end
 
   it "detects nesting even if inner loop refuses" do
-    should_raise(NestingError) {
+    should_raise(Retryable::NestingError) {
       retryable(:detect_nesting => true) {
         retryable(:detect_nesting => false) { raise "not reached" }
       }
@@ -189,13 +189,13 @@ describe "Retryable" do
   end
 
   it "doesn't allow invalid options" do
-    should_raise(InvalidOptions) {
+    should_raise(Retryable::InvalidOptions) {
       retryable(:bad_option => 2) { raise "this is bad" }
     }
   end
 
   it "doesn't allow invalid global options" do
-    should_raise(InvalidOptions) {
+    should_raise(Retryable::InvalidOptions) {
       retryable_options :bad_option => 'bogus'
       raise "not reached"
     }
