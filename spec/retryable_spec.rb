@@ -1,6 +1,6 @@
 require File.dirname(File.absolute_path(__FILE__)) + '/../lib/retryable'
 
-describe "Retryable#retryable" do
+describe "Retryable" do
   include Retryable
 
   before :each do
