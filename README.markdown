@@ -1,8 +1,9 @@
 # Retryable
 
+Automatically retry blocks that raise exceptions.
+
 [![Travis Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
 
-Run a code block and automatically retry when an exception occurs.
 
     require "retryable"
     include Retryable
@@ -11,22 +12,23 @@ Run a code block and automatically retry when an exception occurs.
         read_flaky_sector
     end
 
-This will call read_flaky_sector up to 3 times and return the first
-result that doesn't cause an exception to be raised.  If all calls
-produce an exception, retryable will reraise the most recent one.
+This calls read_flaky_sector and returns the result.
+If an IOError was raised, it tries calling read_flaky_sector again.
+After 3 attempts we give up and let the exception propagate upward.
 
 
 ## Install
 
 * Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
 
-You must include retryable before using it.
+Include retryable before using it.
 This allows unrelated libraries to use retryable without conflicting.
 
     class MyUtility
       include Retryable
       retryable_options :tries => 10
     end
+
 
 ## Options
 
@@ -127,7 +129,7 @@ Print the default settings:
 
 ## License
 
-Public domain.
+MIT or public domain.
 
 
 ## History
