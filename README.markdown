@@ -127,9 +127,10 @@ Print the default settings:
 
     ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
 
+
 ## License
 
-MIT or public domain.
+MIT or public domain, your choice.
 
 
 ## History
@@ -144,5 +145,5 @@ The story until now...
 * 2010 [Songkick](https://github.com/songkick/retryable)
   converted it to a module and added :matching and :sleep.
 * 2011 [Scott Bronson](https://github.com/bronson/retryable)
-  rebased onto orig repo, added some features and cleanups.
+  rebased it back onto Chu's repo, added flexilbe sleep and nesting detection.
 
