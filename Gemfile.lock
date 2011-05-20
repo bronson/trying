@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    retryable (0.2.0)
+    retryable (0.9.0)
 
 GEM
   remote: http://rubygems.org/

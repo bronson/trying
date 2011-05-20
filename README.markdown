@@ -1,8 +1,8 @@
 # Retryable
 
-[![Travis Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
+Automatically retry a code block when an exception occurs.
 
-Run a code block and automatically retry when an exception occurs.
+[![Travis Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
 
     require "retryable"
     include Retryable
@@ -11,22 +11,23 @@ Run a code block and automatically retry when an exception occurs.
         read_flaky_sector
     end
 
-This will call read_flaky_sector up to 3 times and return the first
-result that doesn't cause an exception to be raised.  If all calls
-produce an exception, retryable will reraise the most recent one.
+This calls read_flaky_sector and returns the result.
+If an IOError was raised, it tries calling read_flaky_sector again,
+and will keep trying until we give up and let the exception propagate upward.
 
 
 ## Install
 
 * Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
 
-You must include retryable before using it.
+Include retryable before using it.
 This allows unrelated libraries to use retryable without conflicting.
 
     class MyUtility
       include Retryable
       retryable_options :tries => 10
     end
+
 
 ## Options
 
@@ -125,9 +126,10 @@ Print the default settings:
 
     ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
 
+
 ## License
 
-Public domain.
+MIT or public domain, your choice.
 
 
 ## History
@@ -142,5 +144,5 @@ The story until now...
 * 2010 [Songkick](https://github.com/songkick/retryable)
   converted it to a module and added :matching and :sleep.
 * 2011 [Scott Bronson](https://github.com/bronson/retryable)
-  rebased onto orig repo, added some features and cleanups.
+  rebased it back onto Chu's repo, added flexilbe sleep and nesting detection.
 
