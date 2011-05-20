@@ -127,6 +127,11 @@ Print the default settings:
     ruby -r ./lib/retryable.rb -e "include Retryable; puts Retryable.retryable_options.inspect"
 
 
+## Alternatives
+
+* NodeJS: <https://github.com/tim-kos/node-retry>
+
+
 ## License
 
 MIT or public domain, your choice.
