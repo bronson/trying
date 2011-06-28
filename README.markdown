@@ -149,5 +149,5 @@ The story until now...
 * 2010 [Songkick](https://github.com/songkick/retryable)
   converted it to a module and added :matching and :sleep.
 * 2011 [Scott Bronson](https://github.com/bronson/retryable)
-  rebased it back onto Chu's repo, added flexilbe sleep and nesting detection.
+  rebased it back onto Chu's repo, added flexible sleep and nesting detection.
 
