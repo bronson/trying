@@ -167,6 +167,12 @@ describe "Retryable" do
     should_raise(RangeError) { retryable { raise RangeError } }
   end
 
+  it "should not call sleep if :sleep is nil" do
+    should_not_receive :sleep
+    count_retryable(:sleep => nil) { |c| raise StandardError if c == 0 }
+    @try_count.should == 2
+  end
+
   it "should allow nesting by default" do
     retryable { retryable { 'inner' } }.should == 'inner'
   end

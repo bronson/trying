@@ -51,9 +51,10 @@ use retryable_options to change the defaults:
 By default Retryable waits for one second between retries.  You can change this
 and even provide your own exponential backoff scheme.
 
-    retryable(:sleep => 0) { }                # don't pause at all between retries
-    retryable(:sleep => 10) { }               # sleep ten seconds between retries
-    retryable(:sleep => lambda { |n| 4**n }) { }   # sleep 1, 4, 16, etc. each try
+    retryable(:sleep => 0) { }                    # no pause between retries
+    retryable(:sleep => 10) { }                   # sleep ten seconds between retries
+    retryable(:sleep => lambda { |n| 4**n }) { }  # sleep 1, 4, 16, etc. each try
+    retryable(:sleep => nil) { }                  # don't even call sleep
 
 
 ## Exceptions
