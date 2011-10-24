@@ -206,4 +206,17 @@ describe "Retryable" do
       raise "not reached"
     }
   end
+
+  it "should automatically log" do
+    task = 'frobnicating the fizlunks'
+    retryable_options :sleep => nil, :logger => lambda { |t,r,e|
+      t.should == task
+      r.should == @try_count
+      e.should == nil if r == 0
+      e.message.should == "RangeError" if r > 0
+    }
+    should_raise(RangeError) {
+      count_retryable(:task => task) { raise RangeError }
+    }
+  end
 end

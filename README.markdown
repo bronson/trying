@@ -20,6 +20,8 @@ and will keep trying until we give up and let the exception propagate upward.
 
 * Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
 
+NOTE: you must use bundler.  gem install won't install this code.
+
 Include retryable before using it.
 This allows unrelated libraries to use retryable without conflicting.
 
@@ -38,9 +40,11 @@ Retryable uses these defaults:
 * :sleep => 1
 * :matching => /.\*/
 * :detect_nesting => false
+* :logger => lambda { |task,retries,error| ... }  # only logs if you specify a :task
+* :task => nil
 
-You can pass options to the retryable command (see above) or
-use retryable_options to change the defaults:
+You can pass options every time you call retryable command (see above) or
+use retryable_options to change the settings globally:
 
     retryable_options :tries => 5, :sleep => 20
     retryable { catch_dog }
@@ -92,6 +96,24 @@ and the most recent exception.
     retryable { |retries, exception|
       puts "try #{retries} failed: #{exception}" if retries > 0
       pick_up_soap
+    }
+
+
+## Logging
+
+retryable offers a little logging assistance if you specify a task.
+
+    retryable(:task => 'pick up sticks') { raise IOError }
+
+Prints:
+
+    pick up sticks
+    pick up sticks RETRY 1 because IOError
+
+Use :logger to specify how to log:
+
+    retryable_options :logger => lambda { |task,retries,error|
+        logger.error "retry #{task} #{retries}: #{error}" if retries > 0
     }
 
 

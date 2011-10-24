@@ -16,6 +16,8 @@ module Retryable
       :sleep     => 1,
       :matching  => /.*/,
       :detect_nesting => false,
+      :logger    => lambda { |task,r,e| puts "#{task}#{" RETRY #{r}" if r > 0}#{" because #{e}" if e}" },
+      :task      => nil,
     }
 
     retryable_merge @retryable_options, options if options
@@ -35,6 +37,7 @@ module Retryable
     retries = 0
 
     begin
+      opts[:logger].call(opts[:task],retries,previous_exception) if opts[:task]
       return yield retries, previous_exception
     rescue *retry_exceptions => exception
       raise unless exception.message =~ opts[:matching]
