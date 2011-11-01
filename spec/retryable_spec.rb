@@ -219,4 +219,13 @@ describe "Retryable" do
       count_retryable(:task => task) { raise RangeError }
     }
   end
+
+  it "should not remember temporary options" do
+    # found a bug where setting local options would affect globals
+    # (forgot to dup the global hash when merging in the local opts)
+    retryable_options :logger => lambda { |t,r,e| }
+    retryable_options[:task].should == nil
+    retryable(:task => "TASK SET") { }
+    retryable_options[:task].should == nil
+  end
 end

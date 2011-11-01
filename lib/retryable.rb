@@ -25,7 +25,7 @@ module Retryable
   end
 
   def retryable options = {}, &block
-    opts = retryable_options
+    opts = retryable_options.dup
     retryable_merge opts, options
     return nil if opts[:tries] < 1
 
