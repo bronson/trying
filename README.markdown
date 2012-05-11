@@ -2,7 +2,8 @@
 
 Automatically retry a code block when an exception occurs.
 
-[![Travis Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
+[![Build Status](http://travis-ci.org/bronson/retryable.png)](http://travis-ci.org/bronson/retryable)
+[![Dependency Status](https://gemnasium.com/bronson/retryable.png)](https://gemnasium.com/bronson/retryable)
 
     require "retryable"
     include Retryable
