@@ -13,18 +13,18 @@ Automatically retry a code block when an exception occurs.
     end
 
 This calls read_flaky_sector and returns the result.
-If an IOError was raised, it tries calling read_flaky_sector again,
-and will keep trying until we give up and let the exception propagate upward.
+If an IOError was raised, it tries the call again,
+and one more time (for 3 tries total) before giving up
+and letting the most recent exception propagate upward.
 
 
 ## Install
 
 * Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
 
-NOTE: you must use bundler.  gem install won't install this code.
-
-Include retryable before using it.
-This allows unrelated libraries to use retryable without conflicting.
+You must include the module before using it.
+This allows unrelated libraries to set up their
+own defaults without any chance of conflicts.
 
     class MyUtility
       include Retryable
@@ -44,8 +44,8 @@ Retryable uses these defaults:
 * :logger => lambda { |task,retries,error| ... }  # only logs if you specify a :task
 * :task => nil
 
-You can pass options every time you call retryable command (see above) or
-use retryable_options to change the settings globally:
+You can pass custom settings every time you call the retryable command,
+or call retryable_options to change the default settings:
 
     retryable_options :tries => 5, :sleep => 20
     retryable { catch_dog }
@@ -53,8 +53,8 @@ use retryable_options to change the settings globally:
 
 ## Sleeping
 
-By default Retryable waits for one second between retries.  You can change this
-and even provide your own exponential backoff scheme.
+By default Retryable waits for one second between retries.  You can change this,
+even providing your own exponential backoff scheme.
 
     retryable(:sleep => 0) { }                    # no pause between retries
     retryable(:sleep => 10) { }                   # sleep ten seconds between retries
@@ -64,18 +64,18 @@ and even provide your own exponential backoff scheme.
 
 ## Exceptions
 
-By default Retryable will retry any exception that inherits from StandardError.
+Retryable retries any exception that inherits from StandardError.
 This catches most runtime errors (IOError, floating point) but lets most
 more catastrophic errors (missing method, nil reference) pass through without
 being retried.
 
-Generally you only want to retry a few specific errors:
+Generally you only want to retry a few specific errors anyway:
 
     :retryable(:on => [IOError, RangeError]) { ... }
 
-You can also retry everything but, be warned, this is not what you want!
-You almost certainly do not want to retry method missing, out of memory,
-and a whole bunch of errors that won't be fixed by trying again.
+You can certainly retry everything but, be warned, this is probably not what you want!
+Do you really want to retry method missing, out of memory, and a whole range of other
+errors that can't be fixed by trying again?
 
     :retryable(:on => Exception) { ... }
 
@@ -111,7 +111,7 @@ Prints:
     pick up sticks
     pick up sticks RETRY 1 because IOError
 
-Use :logger to specify how to log:
+Use :logger to change the log message or destination:
 
     retryable_options :logger => lambda { |task,retries,error|
         logger.error "retry #{task} #{retries}: #{error}" if retries > 0
@@ -130,12 +130,12 @@ Nesting detection is off by default but it's easy to turn on.
 
 When Retryable detects a nested call it throws a Retryable::NestedException.
 This is not a StandardError, so it's not retried by default, and the error
-will propagate all the way out.
+will propagate out.
 
 
 ## Examples
 
-Open an URL, retry up to two times when an `OpenURI::HTTPError` occurs.
+Open an URL, retry up to two more times when an `OpenURI::HTTPError` occurs.
 
     require "retryable"
     require "open-uri"
