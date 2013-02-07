@@ -36,7 +36,7 @@ own defaults without any chance of conflicts.
 
 Retryable uses these defaults:
 
-* :tries => 2
+* :tries => 2  # try the call once, then retry once
 * :on => StandardError
 * :sleep => 1
 * :matching => /.\*/
@@ -60,6 +60,14 @@ even providing your own exponential backoff scheme.
     retryable(:sleep => 10) { }                   # sleep ten seconds between retries
     retryable(:sleep => lambda { |n| 4**n }) { }  # sleep 1, 4, 16, etc. each try
     retryable(:sleep => nil) { }                  # don't even call sleep
+
+
+## Disabling
+
+If you set :tries to 0 then your block won't be called at all.
+You can use this to temporarialy disable all your retryable blocks:
+
+    retryable_options :tries => 0
 
 
 ## Exceptions
