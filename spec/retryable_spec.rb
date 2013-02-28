@@ -228,6 +228,16 @@ describe "Retryable" do
     }
   end
 
+  it "should test the default logging" do
+    task = 'setting sigmaclapper to 0'
+    should_raise(RangeError) {
+      # sad to mock puts but alternatives get seriously complex
+      STDOUT.should_receive(:puts).with("setting sigmaclapper to 0")
+      STDOUT.should_receive(:puts).with("setting sigmaclapper to 0 RETRY 1 because RangeError")
+      count_retryable(:task => task, :sleep => nil) { raise RangeError }
+    }
+  end
+
   it "should not remember temporary options" do
     # found a bug where setting local options would affect globals
     # (forgot to dup the global hash when merging in the local opts)
