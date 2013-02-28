@@ -16,7 +16,7 @@ module Retryable
       :sleep     => 1,
       :matching  => /.*/,
       :detect_nesting => false,
-      :logger    => lambda { |task,r,e| puts "#{task}#{" RETRY #{r}" if r > 0}#{" because #{e}" if e}" },
+      :logger    => lambda { |task,r,e| STDERR.puts "#{task}#{" RETRY #{r}" if r > 0}#{" because #{e}" if e}" },
       :task      => nil,
     }
 

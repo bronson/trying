@@ -232,8 +232,8 @@ describe "Retryable" do
     task = 'setting sigmaclapper to 0'
     should_raise(RangeError) {
       # sad to mock puts but alternatives get seriously complex
-      STDOUT.should_receive(:puts).with("setting sigmaclapper to 0")
-      STDOUT.should_receive(:puts).with("setting sigmaclapper to 0 RETRY 1 because RangeError")
+      STDERR.should_receive(:puts).with("setting sigmaclapper to 0")
+      STDERR.should_receive(:puts).with("setting sigmaclapper to 0 RETRY 1 because RangeError")
       count_retryable(:task => task, :sleep => nil) { raise RangeError }
     }
   end
