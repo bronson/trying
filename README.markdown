@@ -1,75 +1,49 @@
-# Retryable
+# Trying
 
-Automatically retry a code block when an exception occurs.
+Execute a code block until it succeeds.  Punch it until it yields.
 
+TODO: change these to trying
 [![Build Status](https://api.travis-ci.org/bronson/retryable.png?branch=master)](http://travis-ci.org/bronson/retryable)
 [![Coverage Status](https://coveralls.io/repos/bronson/retryable/badge.png?branch=master)](https://coveralls.io/r/bronson/retryable)
 [![Code Climate](https://codeclimate.com/github/bronson/retryable.png)](https://codeclimate.com/github/bronson/retryable)
 [![Dependency Status](https://gemnasium.com/bronson/retryable.png)](https://gemnasium.com/bronson/retryable)
 
-    require "retryable"
-    include Retryable
+    require "trying"
 
-    retryable(:tries => 3, :on => IOError) do
-        read_flaky_sector
+    module DiskBox
+      include Trying
+
+      trying 3.times, :on => IOError do
+       read_floppy
+      end
     end
 
-This calls read_flaky_sector and returns the result.
-If an IOError was raised, it tries the call again,
-and one more time (for 3 tries total) before giving up
-and letting the most recent exception propagate upward.
+If read_floppy raises an IOError, it will be called twice more before giving up.
 
 
 ## Install
 
-* Bundler: `gem "retryable", :git => "git://github.com/bronson/retryable.git"`
+* `gem 'trying'`
 
-You must include the module before using it.
-This allows unrelated libraries to set up their
-own defaults without any chance of conflicts.
+Then include it in the module or class that will call it.
+This allows unrelated libraries to use their own defaults without conflict.
 
-    class MyUtility
-      include Retryable
-      retryable_options :tries => 10
-    end
+You can include it globally if laziness is a virtue:
 
-
-## Options
-
-Retryable uses these defaults:
-
-* :tries => 2  # try the call once, then retry once
-* :on => StandardError
-* :sleep => 1
-* :matching => /.\*/
-* :detect_nesting => false
-* :logger => lambda { |task,retries,error| ... }  # only logs if you specify a :task
-* :task => nil
-
-You can pass custom settings every time you call the retryable command,
-or call retryable_options to change the default settings:
-
-    retryable_options :tries => 5, :sleep => 20
-    retryable { catch_dog }
+    require "trying"
+    include Trying
+    trying_options detect_nesting: true
 
 
 ## Sleeping
 
-By default Retryable waits for one second between retries.  You can change this,
+There is normally a one second delay between retries.  You can change this,
 even providing your own exponential backoff scheme.
 
-    retryable(:sleep => 0) { }                    # no pause between retries
-    retryable(:sleep => 10) { }                   # sleep ten seconds between retries
-    retryable(:sleep => lambda { |n| 4**n }) { }  # sleep 1, 4, 16, etc. each try
-    retryable(:sleep => nil) { }                  # don't even call sleep
-
-
-## Disabling
-
-If you set :tries to 0 then your block won't be called at all.
-You can use this to temporarialy disable all your retryable blocks:
-
-    retryable_options :tries => 0
+    trying(:sleep => 0) { }                    # no pause between retries
+    trying(:sleep => 10) { }                   # sleep ten seconds between retries
+    trying(:sleep => lambda { |n| 4**n }) { }  # sleep 1, 4, 16, etc. each try
+    trying(:sleep => nil) { }                  # don't even call sleep
 
 
 ## Exceptions
@@ -81,13 +55,13 @@ being retried.
 
 Generally you only want to retry a few specific errors anyway:
 
-    :retryable(:on => [IOError, RangeError]) { ... }
+    trying(:on => [IOError, RangeError]) { ... }
 
 You can certainly retry everything but, be warned, this is probably not what you want!
 Do you really want to retry method missing, out of memory, and a whole range of other
 errors that can't be fixed by trying again?
 
-    :retryable(:on => Exception) { ... }
+    trying(:on => Exception) { ... }
 
 More on Ruby exceptions:
 
@@ -96,10 +70,10 @@ More on Ruby exceptions:
 
 You can also retry based on the exception message:
 
-    :retryable(:matching => /export/) { ... }
+    trying(:matching => /export/) { ... }
 
 
-## Block Parameters
+## Parameters
 
 Your block is called with two optional parameters: the number of tries until now,
 and the most recent exception.
@@ -143,16 +117,43 @@ This is not a StandardError, so it's not retried by default, and the error
 will propagate out.
 
 
+## Disabling
+
+If you set :tries to 0 then your block won't be called at all.
+You can use this to temporarialy disable all your retryable blocks:
+
+    retryable_options :tries => 0
+
+
+## Options
+
+These are the default options:
+
+* :tries => 2  # try the call once, then retry once
+* :on => StandardError
+* :sleep => 1
+* :matching => /.\*/
+* :detect_nesting => false
+* :logger => lambda { |task,retries,error| ... }  # only logs if you specify a :task
+* :task => nil
+
+You can pass custom settings every time you call the retryable command,
+or call retryable_options to change the default settings:
+
+    retryable_options :tries => 5, :sleep => 20
+    retryable { catch_dog }
+
+
 ## Examples
 
 Open an URL, retry up to two more times when an `OpenURI::HTTPError` occurs.
 
-    require "retryable"
+    require "trying"
     require "open-uri"
 
-    include Retryable
+    include Trying
 
-    retryable(:tries => 3, :on => OpenURI::HTTPError) do
+    trying 3.times, :on => [OpenURI::HTTPError, Errno::ECONNRESET] do
       xml = open("http://google.com/").read
     end
 
@@ -164,11 +165,14 @@ Print the default settings:
 ## Alternatives
 
 * NodeJS: <https://github.com/tim-kos/node-retry>
-
+* Robert Sosinnski's Retryable: https://github.com/robertsosinski/retryable
+* Nikita Fedyashev's Retryable: https://github.com/nfedyashev/retryable
+* Richard Schneeman's Rrrretry: https://github.com/schneems/rrrretry
+* Haakon Sorensen's Retry: http://retry.rubyforge.org/
 
 ## License
 
-MIT or public domain, your choice.
+Confirmed by Chu Yeow: MIT or public domain, your choice.
 
 
 ## History
@@ -184,4 +188,7 @@ The story until now...
   converted it to a module and added :matching and :sleep.
 * 2011 [Scott Bronson](https://github.com/bronson/retryable)
   rebased it back onto Chu's repo, added flexible sleep and nesting detection.
-
+* 2012 [Nikita Fedyashev](https://github.com/nfedyashev/retryable)
+  resurrected Carlo's repo and made a new retryable gem release.
+* 2013 [Scott Bronson](https://github.com/bronson/trying)
+  renamed his fork to trying and released a gem.

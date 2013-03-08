@@ -6,9 +6,9 @@ task :default => ['spec']
 task :test => ['spec']
 
 task :build  do
-  system 'gem build retryable.gemspec'
+  system 'gem build trying.gemspec'
 end
 
 task :release do
-  system 'gem push retryable-*.gem'
+  system 'gem push trying-*.gem'
 end

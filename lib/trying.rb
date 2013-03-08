@@ -1,16 +1,16 @@
-module Retryable
+module Trying
   class NestingError < Exception; end
   class InvalidOptions < RuntimeError; end
 
-  def retryable_merge dst, src
+  def trying_merge dst, src
     typos = src.keys - dst.keys
     raise InvalidOptions.new("Invalid options: #{typos.join(", ")}") unless typos.empty?
     dst.merge! src
   end
 
-  def retryable_options options=nil
-    @retryable_options = options = nil if options == :reset   # for testing
-    @retryable_options ||= {
+  def trying_options options=nil
+    @trying_options = options = nil if options == :reset   # for testing
+    @trying_options ||= {
       :tries     => 2,
       :on        => StandardError,
       :sleep     => 1,
@@ -20,17 +20,17 @@ module Retryable
       :task      => nil,
     }
 
-    retryable_merge @retryable_options, options if options
-    @retryable_options
+    trying_merge @trying_options, options if options
+    @trying_options
   end
 
-  def retryable options = {}, &block
-    opts = retryable_options.dup
-    retryable_merge opts, options
+  def trying options = {}, &block
+    opts = trying_options.dup
+    trying_merge opts, options
     return nil if opts[:tries] < 1
 
-    raise NestingError.new("Nested retryable: #{@retryable_nest}") if @retryable_nest
-    @retryable_nest = caller(2).first if opts[:detect_nesting]
+    raise NestingError.new("Nested trying: #{@trying_nest}") if @trying_nest
+    @trying_nest = caller(2).first if opts[:detect_nesting]
 
     previous_exception = nil
     retry_exceptions = [opts[:on]].flatten
@@ -50,7 +50,7 @@ module Retryable
       retries += 1
       retry
     ensure
-      @retryable_nest = nil
+      @trying_nest = nil
     end
   end
 end
