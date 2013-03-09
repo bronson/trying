@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name     = 'trying'
-  s.version  = '0.9.4'
+  s.version  = '0.9.8'
   s.authors  = ['Cheah Chu Yeow', 'Carlo Zottmann', 'Songkick', 'Scott Bronson']
   s.email    = ['brons_trying@rinspin.com']
   s.homepage = 'http://github.com/bronson/trying'
