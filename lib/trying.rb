@@ -11,11 +11,10 @@ module Trying
     options[:tries] = 1.0/0.0 if args.delete :forever
 
     arg = args.shift
-    if arg.respond_to?(:max) && !arg.is_a?(Hash)  # 6.times
+    if arg.kind_of?(Range) || arg.kind_of?(Enumerator)
       options[:tries] = 1 + arg.max - arg.min
       arg = args.shift
-    end
-    if arg.respond_to?(:to_i) && !arg.nil?
+    elsif arg.kind_of? Numeric
       options[:tries] = arg.to_i
       arg = args.shift
     end

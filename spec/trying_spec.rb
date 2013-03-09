@@ -230,6 +230,12 @@ describe "Trying" do
     }
   end
 
+  it "detects bad arguments" do
+    should_raise(Trying::InvalidOptions) {
+      trying("bogus arg") { raise "this is bad" }
+    }
+  end
+
   it "should automatically log" do
     task = 'frobnicating the fizlunks'
     trying_options :sleep => nil, :logger => lambda { |t,r,e|
