@@ -2,14 +2,11 @@ module Trying
   class NestingError < Exception; end
   class InvalidOptions < RuntimeError; end
 
-  def trying_merge dst, src
-    typos = src.keys - dst.keys
-    raise InvalidOptions.new("Invalid options: #{typos.join(", ")}") unless typos.empty?
-    dst.merge! src
-  end
+  # pass :reset to reset to defaults, or :ephemeral to merge options without modifying defaults
+  def trying_options *options
+    @trying_options = nil if options.delete :reset   # for testing
+    is_ephemeral = options.delete :ephemeral
 
-  def trying_options options=nil
-    @trying_options = options = nil if options == :reset   # for testing
     @trying_options ||= {
       :tries     => 2,
       :on        => StandardError,
@@ -20,32 +17,34 @@ module Trying
       :task      => nil,
     }
 
-    trying_merge @trying_options, options if options
-    @trying_options
+    options = @trying_options.merge options.last || {}
+    typos = options.keys - @trying_options.keys
+    raise InvalidOptions.new("Invalid options: #{typos.join(", ")}") unless typos.empty?
+    @trying_options = options unless is_ephemeral
+    options
   end
 
-  def trying options = {}, &block
-    opts = trying_options.dup
-    trying_merge opts, options
-    return nil if opts[:tries] < 1
+  def trying *options, &block
+    options = trying_options :ephemeral, *options
+    return nil if options[:tries] < 1
 
     raise NestingError.new("Nested trying: #{@trying_nest}") if @trying_nest
-    @trying_nest = caller(2).first if opts[:detect_nesting]
+    @trying_nest = caller(2).first if options[:detect_nesting]
 
     previous_exception = nil
-    retry_exceptions = [opts[:on]].flatten
+    retry_exceptions = [options[:on]].flatten
     retries = 0
 
     begin
-      opts[:logger].call(opts[:task],retries,previous_exception) if opts[:task]
+      options[:logger].call(options[:task],retries,previous_exception) if options[:task]
       return yield retries, previous_exception
     rescue *retry_exceptions => exception
-      raise unless exception.message =~ opts[:matching]
-      raise if retries+1 >= opts[:tries]
+      raise unless exception.message =~ options[:matching]
+      raise if retries+1 >= options[:tries]
 
       previous_exception = exception
-      if opts[:sleep] != nil
-        sleep opts[:sleep].respond_to?(:call) ? opts[:sleep].call(retries) : opts[:sleep]
+      if options[:sleep] != nil
+        sleep options[:sleep].respond_to?(:call) ? options[:sleep].call(retries) : options[:sleep]
       end
       retries += 1
       retry
