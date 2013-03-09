@@ -70,9 +70,9 @@ It's clumsier but you can also retry based on the exception message:
     trying(:matching => /export/) { ... }
 
 
-## Parameters
+## Block
 
-Your block is called with two optional parameters: the number of tries until now,
+Your code block is called with two optional parameters: the number of tries until now,
 and the most recent exception.
 
     trying 6.times do |tries, exception|

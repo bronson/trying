@@ -32,7 +32,6 @@ describe "Trying" do
     }
   end
 
-
   it "should not affect the return value of the block" do
     should_not_receive :sleep
     count_trying { 'foo' }.should == 'foo'
@@ -87,6 +86,22 @@ describe "Trying" do
     should_receive(:sleep).exactly(2).times.with(1)
     should_raise(StandardError) {
       count_trying(:tries => 3) { raise StandardError }
+    }
+    @try_count.should == 3
+  end
+
+  it "retries the specified number of times with Enumerator" do
+    should_receive(:sleep).exactly(2).times.with(1)
+    should_raise(StandardError) {
+      count_trying(3.times) { raise StandardError }
+    }
+    @try_count.should == 3
+  end
+
+  it "retries the specified number of times with integer" do
+    should_receive(:sleep).exactly(2).times.with(1)
+    should_raise(StandardError) {
+      count_trying(3) { raise StandardError }
     }
     @try_count.should == 3
   end
@@ -239,11 +254,17 @@ describe "Trying" do
   end
 
   it "should not remember temporary options" do
-    # found a bug where setting local options would affect globals
-    # (forgot to dup the global hash when merging in the local opts)
+    # there was a bug where setting local options would affect globals
     trying_options :logger => lambda { |t,r,e| }
     trying_options[:task].should == nil
     trying(:task => "TASK SET") { }
     trying_options[:task].should == nil
+  end
+
+  it "should support :forever" do
+    num_repeats = 1000  # this must be as good as forever
+    should_not_receive :sleep
+    count_trying(:forever, :sleep => nil) { |n,e| raise StandardError if n < num_repeats }
+    @try_count.should == num_repeats + 1
   end
 end
